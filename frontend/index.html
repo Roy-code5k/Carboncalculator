@@ -1,75 +1,164 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Carbon Footprint Calculator</title>
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <div class="container">
-            <h1>Carbon Footprint Calculator</h1>
-            <p>Enter your activity details to estimate your annual CO₂ emissions.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Carbon Footprint Calculator</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Carbon Footprint Calculator</h1>
+      <p>Enter your activity details to estimate your annual CO₂ emissions.</p>
 
-            <div class="section">
-                <h2>Transportation</h2>
-                
-                <div class="input-row">
-                    <div class="input-group">
-                        <label for="carKm">Car Travel Distance (km/year)</label>
-                        <input type="number" id="carKm" placeholder="e.g. 1000" />
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="fuelType">Fuel Type</label>
-                        <select id="fuelType">
-                            <option value="petrol">Petrol</option>
-                            <option value="diesel">Diesel</option>
-                            <option value="cng">CNG</option>
-                            <option value="electricity">Electric (EV)</option>
-                        </select>
-                    </div>
-                </div>
+      <!-- Transportation -->
+      <div class="section">
+        <h2>Transportation</h2>
 
-                <div class="input-group">
-                    <label for="electricityUsage">Electricity Usage (kWh/year)</label>
-                    <input type="number" id="electricityUsage" placeholder="e.g. 300" />
-                </div>
+        <label for="carKm">Travel Distance (km/year):</label>
+        <input type="number" id="carKm" placeholder="e.g. 1000" />
 
-                <button id="calculateBtn">Calculate</button>
-            </div>
+        <label for="vehicleType">Vehicle Type:</label>
+        <select id="vehicleType">
+          <option value="car">Car</option>
+          <option value="bus">Bus</option>
+          <option value="train">Train</option>
+          <option value="bike">Bike / Scooter</option>
+          <option value="flight_short">Flight (short haul)</option>
+          <option value="flight_long">Flight (long haul)</option>
+        </select>
 
-            <div class="result-section">
-                <h2>Result</h2>
-                <div id="result">Your CO₂ footprint will appear here.</div>
-            </div>
-        </div>
+        <label for="fuelType">Fuel Type:</label>
+        <select id="fuelType">
+          <option value="petrol">Petrol</option>
+          <option value="diesel">Diesel</option>
+          <option value="cng">CNG</option>
+          <option value="electricity">Electric (EV)</option>
+        </select>
+        <span class="hint">Fuel type may be locked for some vehicle types (train, bus, flights).</span>
+      </div>
 
-        <script>
-            document.getElementById("calculateBtn").onclick = async () => {
-                try {
-                    const carKm = document.getElementById("carKm").value;
-                    const fuelType = document.getElementById("fuelType").value;
-                    const electricityUsage = document.getElementById("electricityUsage").value;
+      <!-- Electricity -->
+      <div class="section">
+        <h2>Home Electricity</h2>
+        <label for="electricityUsage">Electricity Usage (kWh/year):</label>
+        <input type="number" id="electricityUsage" placeholder="e.g. 300" />
+      </div>
 
-                    const response = await fetch("http://localhost:5001/api/emissions/calculate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ carKm, fuelType, electricityUsage })
-                    });
+      <!-- Food -->
+      <div class="section">
+        <h2>Food</h2>
+        <label for="dietType">Diet Type:</label>
+        <select id="dietType">
+          <option value="none">None (do not include food emissions)</option>
+          <option value="meat_heavy">Meat-heavy</option>
+          <option value="average" selected>Average / Mixed</option>
+          <option value="vegetarian">Vegetarian</option>
+          <option value="vegan">Vegan</option>
+        </select>
+        <span class="hint">Rough annual emissions per person depending on diet.</span>
+      </div>
 
-                    if (!response.ok) {
-                        throw new Error(`Server error: ${response.status}`);
-                    }
+      <!-- Waste & Recycling -->
+      <div class="section">
+        <h2>Waste &amp; Recycling</h2>
+        <label for="wasteKgPerWeek">Household Waste (kg/week):</label>
+        <input type="number" id="wasteKgPerWeek" placeholder="e.g. 10" />
 
-                    const data = await response.json();
-                    document.getElementById("result").innerText =
-                        `Total CO₂ Emissions: ${data.total.toFixed(2)} kg/year`;
-                } catch (err) {
-                    console.error(err);
-                    document.getElementById("result").innerText = `Error: ${err.message}`;
-                }
-            };
-        </script>
-    </body>
+        <label for="recyclingRate">Recycled (% of total waste):</label>
+        <input type="number" id="recyclingRate" placeholder="e.g. 20" value="0" min="0" max="100" />
+        <span class="hint">Only the non‑recycled portion is treated as landfilled.</span>
+      </div>
+
+        <div class="section">
+        <h2>Water Usage</h2>
+        <label for="waterLitersPerDay">Water Usage (litres/day):</label>
+        <input
+          type="number"
+          id="waterLitersPerDay"
+          placeholder="e.g. 150"
+        />
+        <span class="hint">
+          Approximate total household water use per person per day (showers, washing, cooking, etc.).
+        </span>
+      </div>
+
+      <button id="calculateBtn">Calculate</button>
+
+      <div id="resultBox">
+        <h2>Result</h2>
+        <p id="result">Your CO₂ footprint will appear here.</p>
+      </div>
+    </div>
+
+    <script>
+        const vehicleTypeSelect = document.getElementById("vehicleType");
+        const fuelTypeSelect = document.getElementById("fuelType");
+
+  function updateFuelTypeLock() {
+    const vt = vehicleTypeSelect.value;
+
+    if (vt === "train") {
+      // Train → Electric only
+      fuelTypeSelect.value = "electricity";
+      fuelTypeSelect.disabled = true;
+    } else if (vt === "bus" || vt === "flight_short" || vt === "flight_long") {
+      // Bus / Flights → Diesel only
+      fuelTypeSelect.value = "diesel";
+      fuelTypeSelect.disabled = true;
+    } else {
+      // Car, Bike, etc. → user can choose
+      fuelTypeSelect.disabled = false;
+    }
+  }
+
+  // Initial lock and on change
+  updateFuelTypeLock();
+  vehicleTypeSelect.addEventListener("change", updateFuelTypeLock);
+
+document.getElementById("calculateBtn").onclick = async () => {
+  try {
+    const carKm = document.getElementById("carKm").value;
+    const vehicleType = vehicleTypeSelect.value;
+    const fuelType = fuelTypeSelect.value;
+    const electricityUsage = document.getElementById("electricityUsage").value;
+    const dietType = document.getElementById("dietType").value;
+    const wasteKgPerWeek = document.getElementById("wasteKgPerWeek").value;
+    const recyclingRate = document.getElementById("recyclingRate").value;
+    const waterLitersPerDay = document.getElementById("waterLitersPerDay").value;
+
+    const response = await fetch("http://localhost:5001/api/emissions/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        carKm,
+        vehicleType,
+        fuelType,
+        electricityUsage,
+        dietType,
+        wasteKgPerWeek,
+        recyclingRate,
+        waterLitersPerDay
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    document.getElementById("result").innerHTML =
+      `<div><strong>Total CO₂ Emissions: ${data.total.toFixed(2)} kg/year</strong></div>` +
+      `<div>Transport: ${data.transportCO2.toFixed(2)} kg</div>` +
+      `<div>Electricity: ${data.electricityCO2.toFixed(2)} kg</div>` +
+      `<div>Food: ${data.foodCO2.toFixed(2)} kg</div>` +
+      `<div>Waste: ${data.wasteCO2.toFixed(2)} kg</div>` +
+      `<div>Water: ${data.waterCO2.toFixed(2)} kg</div>`;
+  } catch (err) {
+    console.error(err);
+    document.getElementById("result").innerText = `Error: ${err.message}`;
+  }
+};
+</script>
+  </body>
 </html>
