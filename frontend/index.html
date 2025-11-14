@@ -4,83 +4,72 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Carbon Footprint Calculator</title>
+        <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        <h1>Carbon Footprint Calculator</h1>
-        <p>Enter your activity details to estimate your annual CO₂ emissions.</p>
+        <div class="container">
+            <h1>Carbon Footprint Calculator</h1>
+            <p>Enter your activity details to estimate your annual CO₂ emissions.</p>
 
-    <h2>Transportation</h2>
+            <div class="section">
+                <h2>Transportation</h2>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="carKm">Car Travel Distance (km/year)</label>
+                        <input type="number" id="carKm" placeholder="e.g. 1000" />
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="fuelType">Fuel Type</label>
+                        <select id="fuelType">
+                            <option value="petrol">Petrol</option>
+                            <option value="diesel">Diesel</option>
+                            <option value="cng">CNG</option>
+                            <option value="electricity">Electric (EV)</option>
+                        </select>
+                    </div>
+                </div>
 
-    <label for="carKm">Car Travel Distance (km/year):</label>
-    <input type="number" id="carKm" placeholder="e.g. 1000" />
+                <div class="input-group">
+                    <label for="electricityUsage">Electricity Usage (kWh/year)</label>
+                    <input type="number" id="electricityUsage" placeholder="e.g. 300" />
+                </div>
 
-    <br><br>
+                <button id="calculateBtn">Calculate</button>
+            </div>
 
-    <label for="fuelType">Fuel Type:</label>
-    <select id="fuelType">
-        <option value="petrol">Petrol</option>
-        <option value="diesel">Diesel</option>
-        <option value="cng">CNG</option>
-        <option value="electricity">Electric (EV)</option>
-    </select><br><br>
-    <br><br>
+            <div class="result-section">
+                <h2>Result</h2>
+                <div id="result">Your CO₂ footprint will appear here.</div>
+            </div>
+        </div>
 
-    <label for="electricityUsage">Electricity Usage (kWh/year):</label>
-    <input type="number" id="electricityUsage" placeholder="e.g. 300" />
+        <script>
+            document.getElementById("calculateBtn").onclick = async () => {
+                try {
+                    const carKm = document.getElementById("carKm").value;
+                    const fuelType = document.getElementById("fuelType").value;
+                    const electricityUsage = document.getElementById("electricityUsage").value;
 
+                    const response = await fetch("http://localhost:5001/api/emissions/calculate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ carKm, fuelType, electricityUsage })
+                    });
 
-    <br><br>
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
 
-    <button id="calculateBtn">Calculate</button>
-
-    <h2>Result</h2>
-    <p id="result">Your CO₂ footprint will appear here.</p>
-
-    <script>
-    // document.getElementById("calculateBtn").onclick = async () => {
-    //     const carKm = document.getElementById("carKm").value;
-    //     const fuelType = document.getElementById("fuelType").value;
-    //     const electricityUsage = document.getElementById("electricityUsage").value;
-
-    //     const response = await fetch("http://localhost:5001/api/emissions/calculate", {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({
-    //             carKm,
-    //             fuelType,
-    //             electricityUsage
-    //         })
-    //     });
-
-    //     const data = await response.json();
-    //     document.getElementById("result").innerText = 
-    //         `Total CO₂ Emissions: ${data.total.toFixed(2)} kg/year`;
-    // };
-        document.getElementById("calculateBtn").onclick = async () => {
-    try {
-        const carKm = document.getElementById("carKm").value;
-        const fuelType = document.getElementById("fuelType").value;
-        const electricityUsage = document.getElementById("electricityUsage").value;
-
-        const response = await fetch("http://localhost:5001/api/emissions/calculate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ carKm, fuelType, electricityUsage })
-        });
-
-        if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        document.getElementById("result").innerText =
-        `Total CO₂ Emissions: ${data.total.toFixed(2)} kg/year`;
-    } catch (err) {
-        console.error(err);
-        document.getElementById("result").innerText = `Error: ${err.message}`;
-    }
-    };
-    </script>
-
+                    const data = await response.json();
+                    document.getElementById("result").innerText =
+                        `Total CO₂ Emissions: ${data.total.toFixed(2)} kg/year`;
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById("result").innerText = `Error: ${err.message}`;
+                }
+            };
+        </script>
     </body>
 </html>
